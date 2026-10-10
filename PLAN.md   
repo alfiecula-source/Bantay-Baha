@@ -1,0 +1,41 @@
+# PLAN.md - Bantay Baha Flood Monitor
+
+## 1. User Stories
+
+1. **Resident Story:**
+   - **User Story:** As a resident living near the creek, I want to see real-time water level status and receive alerts on my phone, so that I can decide whether to evacuate immediately.
+   - **Acceptance Criteria:**
+     - The dashboard updates water level status without manually refreshing the page.
+     - Water status is clearly color-coded (Green for Normal, Orange for Alert, Red for Danger).
+
+2. **Barangay Official Story:**
+   - **User Story:** As a barangay official, I want an automated summary and AI-generated advisory in Filipino and English, so that I can quickly issue clear guidance to the community.
+   - **Acceptance Criteria:**
+     - Generates an advisory under 3 sentences using current reading analytics.
+     - Provides text in both Filipino and English.
+
+3. **System Admin Story:**
+   - **User Story:** As a system administrator, I want IoT sensor data validated strictly upon entry, so that invalid readings do not compromise system alerts.
+   - **Acceptance Criteria:**
+     - Reject payloads missing required fields (`sensorId` or `waterLevelCm`).
+     - Reject water level values strictly below 0 or above 500 cm with a 400 Bad Request error.
+
+---
+
+## 2. Sprint Backlog
+
+- [x] **Setup:** GitHub repository creation & environment setup (Done)
+- [x] **Part A:** Create PLAN.md with user stories, acceptance criteria, backlog, and SDLC explanation (Done)
+- [x] **Part B:** Implement Express Server & API Endpoints (`/api/readings`, `/api/summary`) (Done)
+- [x] **Part C:** Build IoT Sensor Simulator Script (`simulator.js`) (Done)
+- [x] **Part D:** Build Responsive Front-End Dashboard (`public/index.html`) (Done)
+- [x] **Part E:** Implement Data Analytics logic for summary trends (Done)
+- [x] **Part F:** Integrate Gemini AI Advisory with fallback (Done)
+- [x] **Part G:** Deploy application to Render (Done)
+- [x] **Part H:** Complete REFLECTION.md (Done)
+
+---
+
+## 3. SDLC Model
+
+This project follows the **Agile/Scrum framework (1-sprint iteration)** because it involves rapidly developing, testing, and deploying a functional MVP (Minimum Viable Product) within a constrained 3-hour timeframe, allowing for incremental development across distinct modules.
