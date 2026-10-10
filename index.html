@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bantay Baha Flood Monitor</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 15px; max-width: 450px; margin: 0 auto; background: #f4f6f8; }
+    h2 { text-align: center; }
+    .status-card { text-align: center; padding: 20px; border-radius: 8px; color: white; font-size: 1.8em; font-weight: bold; margin-bottom: 15px; }
+    .Normal { background-color: #28a745; }
+    .Alert { background-color: #fd7e14; }
+    .Danger { background-color: #dc3545; }
+    .analytics, .advisory-box { background: white; border: 1px solid #ddd; padding: 12px; margin-bottom: 15px; border-radius: 6px; }
+    button { width: 100%; padding: 12px; font-size: 1em; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    button:hover { background: #0056b3; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; background: white; }
+    th, td { border: 1px solid #ddd; padding: 6px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <h2>Bantay Baha Monitor</h2>
+  
+  <div id="statusCard" class="status-card Normal">-- cm</div>
+
+  <div class="analytics">
+    <h3>Analytics Summary</h3>
+    <p>Avg: <b id="avg">--</b> cm | Min: <b id="min">--</b> cm | Max: <b id="max">--</b> cm</p>
+    <p>Trend: <b id="trend">--</b></p>
+    <p>Counts: Normal(<span id="cN">0</span>), Alert(<span id="cA">0</span>), Danger(<span id="cD">0</span>)</p>
+  </div>
+
+  <button onclick="generateAdvisory()">Generate AI Advisory</button>
+  <div id="advisoryText" class="advisory-box">Click the button above to fetch advisory...</div>
+
+  <canvas id="levelChart" width="400" height="200"></canvas>
+
+  <h3>Latest 10 Readings</h3>
+  <table>
+    <thead><tr><th>Time</th><th>Level (cm)</th></tr></thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+<script>
+  let chart;
+
+  function getStatus(val) {
+    if (val < 100) return 'Normal';
+    if (val <= 149) return 'Alert';
+    return 'Danger';
+  }
+
+  async function updateData() {
+    try {
+      const resReadings = await fetch('/api/readings');
+      const readings = await resReadings.json();
+
+      if (readings.length > 0) {
+        const latest = readings[0];
+        const status = getStatus(latest.waterLevelCm);
+        const card = document.getElementById('statusCard');
+        card.innerText = `${latest.waterLevelCm} cm (${status})`;
+        card.className = `status-card ${status}`;
+
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = readings.slice(0, 10).map(r => 
+          `<tr><td>${new Date(r.timestamp).toLocaleTimeString()}</td><td>${r.waterLevelCm} cm</td></tr>`
+        ).join('');
+
+        const labels = readings.slice(0, 15).map(r => new Date(r.timestamp).toLocaleTimeString()).reverse();
+        const data = readings.slice(0, 15).map(r => r.waterLevelCm).reverse();
+
+        if (chart) {
+          chart.data.labels = labels;
+          chart.data.datasets[0].data = data;
+          chart.update();
+        } else {
+          const ctx = document.getElementById('levelChart').getContext('2d');
+          chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets: [{ label: 'Water Level (cm)', data, borderColor: '#007bff', fill: false }] }
+          });
+        }
+      }
+
+      const resSummary = await fetch('/api/summary');
+      const summary = await resSummary.json();
+      if (summary) {
+        document.getElementById('avg').innerText = summary.average;
+        document.getElementById('min').innerText = summary.min;
+        document.getElementById('max').innerText = summary.max;
+        document.getElementById('trend').innerText = summary.trend;
+        document.getElementById('cN').innerText = summary.statusCounts.Normal;
+        document.getElementById('cA').innerText = summary.statusCounts.Alert;
+        document.getElementById('cD').innerText = summary.statusCounts.Danger;
+      }
+    } catch (err) { console.error(err); }
+  }
+
+  async function generateAdvisory() {
+    document.getElementById('advisoryText').innerText = "Generating advisory...";
+    try {
+      const res = await fetch('/api/advisory');
+      const data = await res.json();
+      document.getElementById('advisoryText').innerText = data.advisory;
+    } catch (e) {
+      document.getElementById('advisoryText').innerText = "Error fetching advisory.";
+    }
+  }
+
+  setInterval(updateData, 5000);
+  updateData();
+</script>
+</body>
+</html>
